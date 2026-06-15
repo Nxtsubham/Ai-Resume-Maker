@@ -1,0 +1,6 @@
+{
+  "name": "AI Resume Maker & ATS Optimizer",
+  "description": "An AI-powered resume builder utilizing custom design templates, real-time keyword suggestions, ATS compatibility check, professional summaries, and secure Firestore document synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

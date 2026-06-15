@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with contact info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "PersonalInformation": {
+      "title": "PersonalInformation",
+      "description": "Contact info shown in candidate's resume",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "website": { "type": "string" },
+        "linkedin": { "type": "string" }
+      },
+      "required": ["fullName", "email"]
+    },
+    "ExperienceItem": {
+      "title": "ExperienceItem",
+      "description": "Professional experience entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "company": { "type": "string" },
+        "role": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "description": { "type": "string" },
+        "current": { "type": "boolean" }
+      },
+      "required": ["id", "company", "role"]
+    },
+    "EducationItem": {
+      "title": "EducationItem",
+      "description": "Academic degrees and programs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "school": { "type": "string" },
+        "degree": { "type": "string" },
+        "fieldOfStudy": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "current": { "type": "boolean" }
+      },
+      "required": ["id", "school"]
+    },
+    "AtsReport": {
+      "title": "AtsReport",
+      "description": "ATS score grading report",
+      "type": "object",
+      "properties": {
+        "score": { "type": "integer" },
+        "matchingKeywords": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missingKeywords": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["score"]
+    },
+    "Resume": {
+      "title": "Resume",
+      "description": "Comprehensive resume document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "templateId": { "type": "string", "enum": ["modern", "minimalist", "executive"] },
+        "personalInfo": { "$ref": "#/entities/PersonalInformation" },
+        "summary": { "type": "string" },
+        "experience": {
+          "type": "array",
+          "items": { "$ref": "#/entities/ExperienceItem" }
+        },
+        "education": {
+          "type": "array",
+          "items": { "$ref": "#/entities/EducationItem" }
+        },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "targetJobDescription": { "type": "string" },
+        "atsReport": { "$ref": "#/entities/AtsReport" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "templateId", "personalInfo", "skills", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles with simple authentication information"
+    },
+    "users/{userId}/resumes/{resumeId}": {
+      "schema": "Resume",
+      "description": "Stores targeted custom resumes under each separate user profile"
+    }
+  }
+}

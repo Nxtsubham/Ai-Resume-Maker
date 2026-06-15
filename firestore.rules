@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation helper for UserProfile (PII Isolation Strategy applied)
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'photoURL', 'createdAt'])
+        && data.keys().size() == 5
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 200
+        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 200))
+        && (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 2048))
+        && data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    // Validation helper for Resume structure
+    function isValidResume(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'templateId', 'personalInfo', 'summary', 'experience', 'education', 'skills', 'targetJobDescription', 'createdAt', 'updatedAt'])
+        && data.keys().size() >= 12 && data.keys().size() <= 13
+        && data.id is string && data.id.size() <= 128
+        && data.userId == userId
+        && data.title is string && data.title.size() <= 200
+        && data.templateId is string && data.templateId in ['modern', 'minimalist', 'executive']
+        && data.personalInfo is map
+        && data.summary is string && data.summary.size() <= 5000
+        && data.experience is list && data.experience.size() <= 50
+        && data.education is list && data.education.size() <= 50
+        && data.skills is list && data.skills.size() <= 100
+        && data.targetJobDescription is string && data.targetJobDescription.size() <= 50000
+        && data.createdAt is string && data.createdAt.size() <= 100
+        && data.updatedAt is string && data.updatedAt.size() <= 100;
+    }
+
+    // Match rules for Users
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isEmailVerified() && isValidUserProfile(request.resource.data);
+      allow delete: if false; // Profiles cannot be deleted over DB client SDK by design
+
+      // Match rules for targeted Resume Subcollection
+      match /resumes/{resumeId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isEmailVerified()
+          && isValidId(resumeId)
+          && isValidResume(request.resource.data, userId);
+        
+        allow update: if isOwner(userId)
+          && isEmailVerified()
+          && isValidId(resumeId)
+          && isValidResume(request.resource.data, userId)
+          && request.resource.data.createdAt == resource.data.createdAt; // Immortal Field rule
+          
+        allow delete: if isOwner(userId) && isValidId(resumeId);
+      }
+    }
+  }
+}
